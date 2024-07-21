@@ -14,17 +14,16 @@ import (
 func main() {
 	username := flag.String("u", "", "Username for the new user")
 	password := flag.String("p", "", "Password for the new user")
-	salt := flag.String("s", "", "Salt for the password")
 	dbPath := flag.String("d", "", "Path to the SQLite database")
 	flag.Parse()
 
-	if *username == "" || *password == "" || *salt == "" || *dbPath == "" {
-		fmt.Println("Usage: -u USERNAME -p PASSWORD -s SALT -d DATABASE_PATH")
+	if *username == "" || *password == "" || *dbPath == "" {
+		fmt.Println("Usage: -u USERNAME -p PASSWORD -d DATABASE_PATH")
 		os.Exit(1)
 	}
 
 	// Hash the password with bcrypt
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(*password+*salt), bcrypt.DefaultCost)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(*password), bcrypt.DefaultCost)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -35,20 +34,6 @@ func main() {
 		log.Fatal(err)
 	}
 	defer db.Close()
-
-	// Ensure the users table exists
-	createTableQuery := `
-	CREATE TABLE IF NOT EXISTS users (
-		userId INTEGER PRIMARY KEY AUTOINCREMENT,
-		username TEXT NOT NULL UNIQUE,
-		password TEXT NOT NULL,
-		createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-	);
-	`
-	_, err = db.Exec(createTableQuery)
-	if err != nil {
-		log.Fatal(err)
-	}
 
 	// Insert the new user
 	insertUserQuery := `INSERT INTO users (username, password) VALUES (?, ?)`
